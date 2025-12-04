@@ -4,6 +4,7 @@ TODO:
  - [ ] Automatic skin layer detection.         [Vera]
  - [ ] Calculation of distance.                [Elias]
  - [ ] Making the GUI (with Matlab deploytool) [Vincent]
+        - [] UI voor dcm cropping
        
  - [ ] Well documented code.
  - [ ] Readme explaining how to use the GUI.
