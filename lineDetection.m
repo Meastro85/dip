@@ -1,8 +1,8 @@
 % --- Pre-processing --- %
 d_gray = rgb2gray(d);
 BW = imbinarize(d_gray);
-BW = ~BW; % Invert to make foreground (tissue/edges) white
-edges = edge(BW,'canny',[0.03 0.15]); % Use slightly lower thresholds for better edge capture
+BW = ~BW;
+edges = edge(BW,'canny',[0.03 0.15]);
 [H,theta,rho] = hough(edges);
 
 % --- Hough Space Horizontal Lines --- %
@@ -16,19 +16,29 @@ NumPeaks = 10;
 P_all_horz = houghpeaks(H_only_horizontal, NumPeaks, ...
                        'Threshold', 0.2*max(H_only_horizontal(:)), ...
                        'NHoodSize', [11 11]);
-
-% --- Extract Line Segments --- %
-lines_all_horz = houghlines(edges, theta, rho, P_all_horz, 'FillGap', 30, 'MinLength', 100);
+lines_all_horz = houghlines(edges, theta, rho, P_all_horz, 'FillGap', 70, 'MinLength', 100);
 
 % --- Visualization --- %
 figure;
 
 subplot(1,2,1); imshow(d); title('Original');
 subplot(1,2,2); imshow(d); hold on;
-title(['Detected Horizontal Lines (', num2str(length(lines_all_horz)), ' segments)']);
+title('Selected Horizontal Lines (Longer)');
+lines_to_show_indices = [2, 6];
 
-colors = hsv(length(lines_all_horz));
-for k = 1:length(lines_all_horz)
-    xy = [lines_all_horz(k).point1; lines_all_horz(k).point2];
-    plot(xy(:,1), xy(:,2), 'Color', colors(k,:), 'LineWidth', 3);
+selected_colors = [
+    1.0, 0.0, 1.0; % Pink
+    0.5, 0.0, 0.5  % Purple
+];
+
+for i = 1:length(lines_to_show_indices)
+    k = lines_to_show_indices(i);
+
+    if k <= length(lines_all_horz)
+        line_data = lines_all_horz(k);
+        xy = [line_data.point1; line_data.point2];
+        plot(xy(:,1), xy(:,2), 'Color', selected_colors(i,:), 'LineWidth', 3);
+    else
+        disp(['Warning: Index ', num2str(k), ' is out of bounds or line did not meet the new length criteria.']);
+    end
 end
