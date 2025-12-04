@@ -1,72 +1,34 @@
-function [largestLineMask, overlayImage] = detectLargestLine(origImage)
+% --- Pre-processing --- %
+d_gray = rgb2gray(d);
+BW = imbinarize(d_gray);
+BW = ~BW; % Invert to make foreground (tissue/edges) white
+edges = edge(BW,'canny',[0.03 0.15]); % Use slightly lower thresholds for better edge capture
+[H,theta,rho] = hough(edges);
 
-    % If color, convert to grayscale
-    if ndims(origImage) == 3
-        gray = rgb2gray(origImage);
-    else
-        gray = origImage;
-    end
+% --- Hough Space Horizontal Lines --- %
+idx90 = abs(theta - 90) < 5;
+idx_90 = abs(theta - (-90)) < 5;
+idx_horizontal = idx90 | idx_90;
+H_only_horizontal = H;
+H_only_horizontal(:, ~idx_horizontal) = 0;
 
-    % Binarize
-    T = graythresh(gray);
-    bw = imbinarize(gray, T);
+NumPeaks = 10;
+P_all_horz = houghpeaks(H_only_horizontal, NumPeaks, ...
+                       'Threshold', 0.2*max(H_only_horizontal(:)), ...
+                       'NHoodSize', [11 11]);
 
-    % Clean noise
-    bw = bwareaopen(bw, 50);        % remove tiny components
-    bw = imclose(bw, strel('line', 15, 0));  % enhance linear structures
+% --- Extract Line Segments --- %
+lines_all_horz = houghlines(edges, theta, rho, P_all_horz, 'FillGap', 30, 'MinLength', 100);
 
-    % Label connected components
-    CC = bwconncomp(bw);
-
-    % Measure properties of each component
-    stats = regionprops(CC, 'Area', 'MajorAxisLength', 'PixelIdxList');
-
-    if isempty(stats)
-        largestLineMask = false(size(bw));
-        overlayImage = origImage;
-        return;
-    end
-
-    % Select the largest line based on MajorAxisLength
-    [~, idx] = max([stats.MajorAxisLength]);
-
-    % Create mask of the largest line
-    largestLineMask = false(size(bw));
-    largestLineMask(stats(idx).PixelIdxList) = true;
-
-    % Create overlay on original image
-    overlayImage = imoverlay(mat2gray(origImage), largestLineMask, [1 0 0]); % red mask
-
-end
-
-calf = dicomread("images\BO2WL_F_10089_T1_CALF.dcm");
-bic1 = dicomread("images/BO2WL_F_20048_T1_BIC.dcm");
-bic2 = dicomread("images/BO2WL_F_20050_T1_BIC.dcm");
-tri = dicomread("images/BO2WL_F_20052_T1_TRI.dcm");
-
-h = imagesc(calf, [0 1024]); colormap(gray), colorbar, axis image, axis off;
-Y = imcrop(h);
-
-calfGray = rgb2gray(Y);
-TCalf = graythresh(calfGray);
-bwImageCalf = imbinarize(calfGray, TCalf);
-
-bic1Gray = rgb2gray(bic1);
-TBic1 = graythresh(bic1Gray);
-bwImageBic1 = imbinarize(bic1Gray, TBic1);
-
-bic2gray = rgb2gray(bic2);
-TBic2 = graythresh(bic2gray);
-bwImageBic2 = imbinarize(bic2gray, TBic2);
-
-triGray = rgb2gray(tri);
-TTri = graythresh(triGray);
-bwImageTri = imbinarize(triGray, TTri);
-
-[maskCalf, overlayCalf] = detectLargestLine(Y);
-
+% --- Visualization --- %
 figure;
-subplot(1, 4, 1), imshow(overlayCalf, []), title('Calf Image');
-subplot(1, 4, 2), imshow(bwImageBic1, []), title('Bic1 Image');
-subplot(1, 4, 3), imshow(bwImageBic2, []), title('Bic2 Image');
-subplot(1, 4, 4), imshow(bwImageTri, []), title('Tri Image');
+
+subplot(1,2,1); imshow(d); title('Original');
+subplot(1,2,2); imshow(d); hold on;
+title(['Detected Horizontal Lines (', num2str(length(lines_all_horz)), ' segments)']);
+
+colors = hsv(length(lines_all_horz));
+for k = 1:length(lines_all_horz)
+    xy = [lines_all_horz(k).point1; lines_all_horz(k).point2];
+    plot(xy(:,1), xy(:,2), 'Color', colors(k,:), 'LineWidth', 3);
+end
