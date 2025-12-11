@@ -1,5 +1,5 @@
 % --- Pre-processing --- %
-tri_1 = dicomread('BO2WL_F_10089_T1_CALF.dcm');
+tri_1 = dicomread('BO2WL_F_20050_T1_BIC.dcm');
 d_gray = rgb2gray(tri_1);
 BW = imbinarize(d_gray);
 BW = ~BW;
@@ -77,6 +77,8 @@ end
 figure;
 imshow(tri_1); hold on;
 title('Horizontal Lines');
+x_min = region_item.RegionLocationMinX0;
+x_max = region_item.RegionLocationMaxX1;
 
 for i = 1:length(selectedLines)
     line_data = selectedLines(i);
@@ -84,7 +86,7 @@ for i = 1:length(selectedLines)
     % Forced horizontal: use mean y-position
     y_level = mean([line_data.point1(2), line_data.point2(2)]);
 
-    x_full = [1, imgWidth];
+    x_full = [x_min, x_max];
     y_full = [y_level, y_level];
 
     % Red line
@@ -104,7 +106,7 @@ if length(selectedLines) == 2
 
     % length in cm
     vertical_length_px = abs(y_bottom - y_top);
-    pixel_spacing_mm = region_item.PhysicalDeltaY; % mm per pixel
+    pixel_spacing_mm = region_item.PhysicalDeltaY;
     vertical_length_cm = vertical_length_px * pixel_spacing_mm;
 
     % display
