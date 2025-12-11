@@ -1,5 +1,5 @@
 % --- Pre-processing --- %
-tri_1 = dicomread('BO2WL_F_10089_T1_CALF.dcm');
+tri_1 = dicomread('BO2WL_F_20050_T1_BIC.dcm');
 d_gray = rgb2gray(tri_1);
 BW = imbinarize(d_gray);
 BW = ~BW;
@@ -46,16 +46,16 @@ if isempty(validLines)
 end
 
 
-% Sort by length
+% sort by length
 line_lengths = arrayfun(@(L) norm(L.point1 - L.point2), validLines);
 [~, sortedIdx] = sort(line_lengths, 'descend');
 sortedLines = validLines(sortedIdx);
 
-% Pick first (longest)
+% pick first (longest)
 selected = sortedLines(1);
 y_first = mean([selected.point1(2), selected.point2(2)]);
 
-% Find second line with enough distance
+% find second line (with enough distance)
 secondFound = false;
 for i = 2:length(sortedLines)
     y_candidate = mean([sortedLines(i).point1(2), sortedLines(i).point2(2)]);
@@ -77,6 +77,8 @@ end
 figure;
 imshow(tri_1); hold on;
 title('Horizontal Lines');
+x_min = region_item.RegionLocationMinX0;
+x_max = region_item.RegionLocationMaxX1;
 
 for i = 1:length(selectedLines)
     line_data = selectedLines(i);
@@ -84,9 +86,31 @@ for i = 1:length(selectedLines)
     % Forced horizontal: use mean y-position
     y_level = mean([line_data.point1(2), line_data.point2(2)]);
 
-    x_full = [1, imgWidth];
+    x_full = [x_min, x_max];
     y_full = [y_level, y_level];
 
     % Red line
     plot(x_full, y_full, 'Color', [1, 0, 0], 'LineWidth', 2);
+end
+
+
+if length(selectedLines) == 2
+    yA = mean([selectedLines(1).point1(2), selectedLines(1).point2(2)]);
+    yB = mean([selectedLines(2).point1(2), selectedLines(2).point2(2)]);
+
+    y_top = min(yA, yB);
+    y_bottom = max(yA, yB);
+
+    x_mid = imgWidth / 2;
+    plot([x_mid, x_mid], [y_top, y_bottom], 'Color', [1 1 0], 'LineWidth', 2);
+
+    % length in cm
+    vertical_length_px = abs(y_bottom - y_top);
+    pixel_spacing_mm = region_item.PhysicalDeltaY;
+    vertical_length_cm = vertical_length_px * pixel_spacing_mm;
+
+    % display
+    text(x_mid + 10, (y_top + y_bottom)/2, ...
+        sprintf('Length = %.3f cm', vertical_length_cm), ...
+        'Color', 'yellow', 'FontSize', 12, 'FontWeight', 'bold');
 end
