@@ -1,11 +1,9 @@
-Automated Tissue Layer Detection in Medical Imaging
+# Automated Tissue Layer Detection in Medical Imaging
 
-TODO:
- - [ ] Automatic skin layer detection.         [Vera]
- - [ ] Calculation of distance.                [Elias]
- - [ ] Making the GUI (with Matlab deploytool) [Vincent]
-        - [] UI voor dcm cropping
-       
- - [ ] Well documented code.
- - [ ] Readme explaining how to use the GUI.
- - [ ] Explanatory document – a textual description of what happens behind the screens in your application. Explain your choices here, e.g. filters or methodologies.
+## GUI Usage
+- Load image button: Click to open a file browser and then select a dicom image (Only accepts Dicom images, no other formats.)
+- Save image button: Click to save the current processed image in the app as a png.
+- Min Angle Field input: The minimum angle a split between tissue can be curved for our detection to recognize it. (Min 85, max 95)
+- Max Angle Field input:  The maximum angle a split between tissue can be curved for out detection to recognize it. (Min 85, max 95)
+
+- Image axes: allows basic operations on your processed image. Buttons are located in the top right. (Zooming, panning, showing coords)
